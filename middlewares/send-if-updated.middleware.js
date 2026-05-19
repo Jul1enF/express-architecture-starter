@@ -11,11 +11,11 @@
 
 // Doesn't work if the datas were search with a .select() that doesn't include the _id and the udpatedAt !!!!
 
-// If datas are not store persistantly in the front or can be lost after this response, send a if-none-match erased for the first fetch (http cache could have the same etag)
+// If datas are not store persistantly in the front or can be lost after this response, send a if-none-match erased for the first fetch (http cache could still have the same etag)
 
 // If there is a possibility that a user post a doc and another one suppress it, docs count has to be sent
 
-// Constants has to be sent in an object with key name === "constants"
+// Constants has to be sent in an object with key name === "constants" inside data object
 
 const crypto = require("crypto");
 
