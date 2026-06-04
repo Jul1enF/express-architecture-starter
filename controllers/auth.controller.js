@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt')
 const uid2 = require('uid2')
 const jwt = require('jsonwebtoken')
 const jwtTokenKey = process.env.JWT_TOKEN_KEY;
+const { setWebTokens } = require("../utils/webTokens")
 
 
 // SIGNIN
@@ -13,7 +14,9 @@ const signin = async (req, res, next) => {
 
     const userData = await User.findOne({ email })
 
-    if (!userData || !bcrypt.compareSync(password, userData.password)) {
+    const correctLogin = !userData ? false : await bcrypt.compare(password, userData.password)
+
+    if (!correctLogin) {
         res.json({ result: false, errorText: "Email ou mot de passe incorrect !" })
         return
     }
@@ -23,12 +26,22 @@ const signin = async (req, res, next) => {
             token,
         }, jwtTokenKey)
 
-
         userData.token = token
 
         await userData.save()
 
-        res.json({ result: true, user: { first_name: userData.first_name, last_name: userData.last_name, email: userData.email, jwtToken: newJwtToken, is_admin: userData.is_admin } })
+        const mobileApp = req.headers['x-client-type'] === "mobile-app"
+
+        if (!mobileApp) setWebTokens(res, newJwtToken)
+
+        const user = {
+            first_name: userData.first_name,
+            is_admin: userData.is_admin
+        }
+
+        if (mobileApp) user.jwtToken = newJwtToken
+
+        res.json({ result: true, user })
     }
 }
 
