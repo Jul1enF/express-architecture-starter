@@ -29,8 +29,9 @@ exports.setWebTokens = (res, jwtToken) => {
         httpOnly: true,
     })
 
-    res.cookie('csrfToken', csrfToken, {
+    res.cookie('csrf-token', csrfToken, {
         ...cookieOptions,
+        httpOnly: false,
     })
 }
 

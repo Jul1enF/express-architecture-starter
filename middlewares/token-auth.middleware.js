@@ -10,87 +10,51 @@ const errorResponse = {
 }
 
 
-const userTokenAuth = async (req, res, next) => {
-  try {
-    const mobileApp = req.headers['x-client-type'] === "mobile-app"
-    const csrfTokenHeader = req.headers['x-csrf-token']
-    const csrfTokenCookie = req.cookies.csrfToken
+const tokenAuth = (requireAdmin = false) => {
+  return async (req, res, next) => {
+    try {
+      const mobileApp = req.headers['x-client-type'] === "mobile-app"
+      const csrfTokenHeader = req.headers['x-csrf-token']
+      const csrfTokenCookie = req.cookies.csrfToken
 
-    if (!mobileApp) {
-      const validCsrf =
-        verifyCsrfToken(csrfTokenHeader) &&
-        csrfTokenCookie &&
-        csrfTokenHeader === csrfTokenCookie
+      if (!mobileApp) {
+        const validCsrf =
+          verifyCsrfToken(csrfTokenHeader) &&
+          csrfTokenCookie &&
+          csrfTokenHeader === csrfTokenCookie
 
-      if (!validCsrf) {
+        if (!validCsrf) {
+          return res.json(errorResponse)
+        }
+      }
+
+      const { authorization } = req.headers;
+
+      const jwtToken = !mobileApp ? req.cookies.jwtToken :
+      authorization?.startsWith('Bearer ') ? authorization.slice(7, authorization.length) : null
+
+      if (!jwtToken) {
         return res.json(errorResponse)
       }
-    }
 
-    const { authorization } = req.headers;
+      const { token } = jwt.verify(jwtToken, jwtTokenKey);
 
-    const jwtToken = mobileApp ? authorization.slice(7, authorization.length) : req.cookies.jwtToken
+      req.user = await User.findOne({ token });
 
-    if (!jwtToken) {
-      return res.json(errorResponse)
-    }
-
-    const { token } = jwt.verify(jwtToken, jwtTokenKey);
-
-    req.user = await User.findOne({ token });
-
-    // Check that the user token has been successfuly found in the db
-    if (!req.user) {
-      return res.json(errorResponse);
-    }
-
-    return next();
-  } catch (err) {
-    console.log("User Token Auth Error :", err);
-    return res.json(errorResponse);
-  }
-};
-
-
-const adminTokenAuth = async (req, res, next) => {
-  try {
-    const mobileApp = req.headers['x-client-type'] === "mobile-app"
-    const csrfTokenHeader = req.headers['x-csrf-token']
-    const csrfTokenCookie = req.cookies.csrfToken
-
-    if (!mobileApp) {
-      const validCsrf =
-        verifyCsrfToken(csrfTokenHeader) &&
-        csrfTokenCookie &&
-        csrfTokenHeader === csrfTokenCookie
-
-      if (!validCsrf) {
-        return res.json(errorResponse)
+      // Check that the user token has been successfuly found in the db
+      if (!req.user || (requireAdmin && !req.user?.is_admin)) {
+        return res.json(errorResponse);
       }
-    }
 
-    const { authorization } = req.headers;
-
-    const jwtToken = mobileApp ? authorization.slice(7, authorization.length) : req.cookies.jwtToken
-
-    if (!jwtToken) {
-      return res.json(errorResponse)
-    }
-
-    const { token } = jwt.verify(jwtToken, jwtTokenKey);
-
-    req.user = await User.findOne({ token });
-
-    // Check that the user token has been successfuly found in the db
-    if (!req.user || !req.user?.is_admin) {
+      return next();
+    } catch (err) {
+      console.log("User Token Auth Error :", err);
       return res.json(errorResponse);
     }
+  };
+}
 
-    return next();
-  } catch (err) {
-    console.log("User Token Auth Error :", err);
-    return res.json(errorResponse);
-  }
-};
+const requireUser = tokenAuth()
+const requireAdmin = tokenAuth(true)
 
-module.exports = { userTokenAuth, adminTokenAuth };
+module.exports = { requireUser, requireAdmin };
