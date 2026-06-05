@@ -15,7 +15,7 @@ const tokenAuth = (requireAdmin = false) => {
     try {
       const mobileApp = req.headers['x-client-type'] === "mobile-app"
       const csrfTokenHeader = req.headers['x-csrf-token']
-      const csrfTokenCookie = req.cookies.csrfToken
+      const csrfTokenCookie = req.cookies['csrf-token']
 
       if (!mobileApp) {
         const validCsrf =

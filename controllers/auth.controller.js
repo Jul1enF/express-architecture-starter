@@ -35,13 +35,20 @@ const signin = async (req, res, next) => {
         if (!mobileApp) setWebTokens(res, newJwtToken)
 
         const user = {
+            isConnected : true,
             first_name: userData.first_name,
+            last_name: userData.last_name, 
+            email: userData.email,
             is_admin: userData.is_admin
         }
 
-        if (mobileApp) user.jwtToken = newJwtToken
+        if (!mobileApp) user.hasToken = true
 
-        res.json({ result: true, user })
+        const successResponse = { result : true, user}
+
+        if (mobileApp) successResponse.jwtToken = newJwtToken
+
+        res.json(successResponse)
     }
 }
 
