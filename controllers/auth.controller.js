@@ -4,8 +4,8 @@ const bcrypt = require('bcrypt')
 const uid2 = require('uid2')
 const jwt = require('jsonwebtoken')
 const jwtTokenKey = process.env.JWT_TOKEN_KEY;
-const { setWebTokens } = require("../utils/webTokens")
 
+const fakeHash = "$7b$90$8TKRDLyb/bLJ8c9iDk6Gs.urerUoVogSEGrzBvwsfeRj/IZRTcCyQC"
 
 // SIGNIN
 const signin = async (req, res, next) => {
@@ -14,42 +14,35 @@ const signin = async (req, res, next) => {
 
     const userData = await User.findOne({ email })
 
-    const correctLogin = !userData ? false : await bcrypt.compare(password, userData.password)
+    const comparisonHash = userData?.password ?? fakeHash
 
-    if (!correctLogin) {
+    const correctLogin = await bcrypt.compare(password, comparisonHash)
+
+    if (!userData || !correctLogin) {
         res.json({ result: false, errorText: "Email ou mot de passe incorrect !" })
         return
     }
-    else {
-        const token = uid2(32)
-        const newJwtToken = jwt.sign({
-            token,
-        }, jwtTokenKey)
 
-        userData.token = token
+    const token = uid2(32)
+    const newJwtToken = jwt.sign({
+        token,
+    }, jwtTokenKey)
 
-        await userData.save()
+    userData.token = token
 
-        const mobileApp = req.headers['x-client-type'] === "mobile-app"
+    await userData.save()
 
-        if (!mobileApp) setWebTokens(res, newJwtToken)
-
-        const user = {
-            isConnected : true,
-            first_name: userData.first_name,
-            last_name: userData.last_name, 
-            email: userData.email,
-            is_admin: userData.is_admin
-        }
-
-        if (!mobileApp) user.hasToken = true
-
-        const successResponse = { result : true, user}
-
-        if (mobileApp) successResponse.jwtToken = newJwtToken
-
-        res.json(successResponse)
+    const user = {
+        isConnected: true,
+        first_name: userData.first_name,
+        last_name: userData.last_name,
+        email: userData.email,
+        is_admin: userData.is_admin
     }
+
+    const successResponse = { result: true, user, jwtToken: newJwtToken }
+
+    res.json(successResponse)
 }
 
 module.exports = { signin }

@@ -1,7 +1,6 @@
 const jwt = require("jsonwebtoken");
 const jwtTokenKey = process.env.JWT_TOKEN_KEY;
 const User = require("../models/users.model");
-const verifyCsrfToken = require("../utils/webTokens")
 
 const errorResponse = {
   result: false,
@@ -13,25 +12,10 @@ const errorResponse = {
 const tokenAuth = (requireAdmin = false) => {
   return async (req, res, next) => {
     try {
-      const mobileApp = req.headers['x-client-type'] === "mobile-app"
-      const csrfTokenHeader = req.headers['x-csrf-token']
-      const csrfTokenCookie = req.cookies['csrf-token']
-
-      if (!mobileApp) {
-        const validCsrf =
-          verifyCsrfToken(csrfTokenHeader) &&
-          csrfTokenCookie &&
-          csrfTokenHeader === csrfTokenCookie
-
-        if (!validCsrf) {
-          return res.json(errorResponse)
-        }
-      }
-
+      
       const { authorization } = req.headers;
 
-      const jwtToken = !mobileApp ? req.cookies.jwtToken :
-      authorization?.startsWith('Bearer ') ? authorization.slice(7, authorization.length) : null
+      const jwtToken = authorization?.startsWith('Bearer ') ? authorization.slice(7) : null
 
       if (!jwtToken) {
         return res.json(errorResponse)

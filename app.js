@@ -10,22 +10,7 @@ var usersRouter = require('./routes/users');
 var app = express();
 
 const cors = require('cors')
-app.use(cors({
-  origin: (origin, callback) => {
-    if (
-      !origin ||
-      origin === 'http://localhost:3001' ||
-      origin === 'https://localhost:3001' ||
-      (origin.includes('my-app') && origin.includes('.vercel.app')) ||
-      origin === 'https://www.domain-name.com'
-    ) {
-      callback(null, true)
-    } else {
-      callback(new Error('Not allowed by CORS'))
-    }
-  },
-  credentials: true
-}))
+app.use(cors());
 
 
 const fileUpload = require('express-fileupload');

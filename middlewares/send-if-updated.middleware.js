@@ -109,7 +109,7 @@ const getEtagBase = (data) => {
 
 const sendIfUpdated = (req, res, next) => {
     const { dataName, data } = res.locals.searchResult;
-    if (!data) throw new Error("sendIfUpdated requires res.locals.searchResult to be set.");
+    if (!data) return res.json({result : false});
 
     let { etagBase, docsCount } = getEtagBase(data);
 
